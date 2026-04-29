@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Oil AI Terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0b0f1a;
+  color:white;
+}
+
+.container{
+  padding:10px;
+}
+
+.card{
+  background:#1a2338;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.signal{
+  font-size:24px;
+  font-weight:bold;
+}
+
+.buy{ color:#00ff99; }
+.sell{ color:#ff4d4d; }
+
+.small{
+  font-size:12px;
+  opacity:0.8;
+}
+
+canvas{
+  background:#11182a;
+  border-radius:10px;
+  padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="card">
+    <div>🛢️ Oil Price: <span id="oil">-</span></div>
+    <div>💵 USD: <span id="usd">-</span></div>
+  </div>
+
+  <div class="card">
+    <div class="small">AI Signal</div>
+    <div id="signal" class="signal">-</div>
+    <div>Probability: <span id="prob">-</span>%</div>
+    <div>Score: <span id="score">-</span></div>
+  </div>
+
+  <div class="card">
+    <canvas id="chart"></canvas>
+  </div>
+
+</div>
+
+<script>
+
+const ctx = document.getElementById("chart");
+
+let chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      label: "Oil Price",
+      data: [],
+      borderColor: "#00ff99",
+      tension: 0.2
+    }]
+  }
+});
+
+async function fetchData(){
+
+  let res = await fetch("http://127.0.0.1:5000/signal");
+  let d = await res.json();
+
+  document.getElementById("oil").innerText = d.oil_price.toFixed(2);
+  document.getElementById("usd").innerText = d.usd.toFixed(2);
+
+  document.getElementById("score").innerText = d.score;
+  document.getElementById("prob").innerText = d.probability;
+
+  let sig = document.getElementById("signal");
+  sig.innerText = d.signal;
+
+  sig.className = "signal " + (d.signal === "BUY" ? "buy" : "sell");
+
+  // chart update
+  chart.data.labels.push("");
+  chart.data.datasets[0].data.push(d.oil_price);
+
+  if(chart.data.labels.length > 30){
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+  }
+
+  chart.update();
+}
+
+setInterval(fetchData, 3000);
+fetchData();
+
+</script>
+
+</body>
+</html>
